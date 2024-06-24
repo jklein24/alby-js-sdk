@@ -10,8 +10,15 @@ import {
   WebLNRequestMethod,
   LookupInvoiceArgs,
   LookupInvoiceResponse,
+  LookupUserArgs,
+  LookupUserResponse,
   WebLNMethod,
   MakeInvoiceResponse,
+  FetchQuoteArgs,
+  FetchQuoteResponse,
+  ExecuteQuoteArgs,
+  PayToAddressArgs,
+  PayToAddressResponse,
 } from "@webbtc/webln-types";
 import { GetInfoResponse } from "@webbtc/webln-types";
 import { NWCAuthorizationUrlOptions } from "../types";
@@ -73,6 +80,10 @@ const nip47ToWeblnRequestMap: Record<Nip47Method, WebLNMethod> = {
   multi_pay_invoice: "sendMultiPayment",
   multi_pay_keysend: "multiKeysend",
   sign_message: "signMessage",
+  lookup_user: "lookupUser",
+  fetch_quote: "fetchQuote",
+  execute_quote: "executeQuote",
+  pay_to_address: "payToAddress",
 };
 
 export class NostrWebLNProvider implements WebLNProvider, Nip07Provider {
@@ -464,6 +475,83 @@ export class NostrWebLNProvider implements WebLNProvider, Nip07Provider {
     };
 
     this.notify("multiKeysend", result);
+    return result;
+  }
+
+  async lookupUser(args: LookupUserArgs): Promise<LookupUserResponse> {
+    await this.checkEnabled();
+
+    const nip47Result = await this.client.lookupUser(args);
+
+    const result: LookupUserResponse = {
+      lud16: nip47Result.lud16,
+      currencies: nip47Result.currencies,
+    };
+
+    this.notify("lookupUser", result);
+
+    return result;
+  }
+
+  async fetchQuote(args: FetchQuoteArgs): Promise<FetchQuoteResponse> {
+    await this.checkEnabled();
+
+    const nip47Result = await this.client.fetchQuote({
+      locked_currency_side: args.lockedCurrencySide,
+      locked_currency_amount: args.lockedCurrencyAmount,
+      sending_currency_code: args.sendingCurrencyCode,
+      receiving_currency_code: args.receivingCurrencyCode,
+      receiver: { lud16: args.receivingAddress },
+    });
+
+    const result: FetchQuoteResponse = {
+      lockedCurrencySide: nip47Result.locked_currency_side,
+      sendingCurrencyCode: nip47Result.sending_currency_code,
+      receivingCurrencyCode: nip47Result.receiving_currency_code,
+      receivingAddress: args.receivingAddress,
+      receivingCurrencyAmount: nip47Result.total_receiving_amount,
+      sendingCurrencyAmount: nip47Result.total_sending_amount,
+      paymentHash: nip47Result.payment_hash,
+      multiplier: nip47Result.multiplier,
+      fee: nip47Result.fee,
+      expiresAt: nip47Result.expires_at,
+    };
+
+    this.notify("fetchQuote", result);
+
+    return result;
+  }
+
+  async executeQuote({
+    paymentHash,
+  }: ExecuteQuoteArgs): Promise<SendPaymentResponse> {
+    await this.checkEnabled();
+
+    const nip47Result = await this.client.executeQuote({
+      payment_hash: paymentHash,
+    });
+
+    const result: SendPaymentResponse = { preimage: nip47Result.preimage };
+
+    this.notify("executeQuote", result);
+
+    return result;
+  }
+
+  async payToAddress(args: PayToAddressArgs): Promise<PayToAddressResponse> {
+    await this.checkEnabled();
+
+    const nip47Result = await this.client.payToAddress({
+      receiver: { lud16: args.receivingLud16 },
+      sending_currency_amount: args.sendingCurrencyAmount,
+      sending_currency_code: args.sendingCurrencyCode,
+      receiving_currency_code: args.receivingCurrencyCode,
+    });
+
+    const result: PayToAddressResponse = { preimage: nip47Result.preimage };
+
+    this.notify("payToAddress", result);
+
     return result;
   }
 

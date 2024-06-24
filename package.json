@@ -42,6 +42,7 @@
     "nostr-tools": "^1.17.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.24.7",
     "@commitlint/cli": "^17.7.1",
     "@commitlint/config-conventional": "^17.7.0",
     "@getalby/lightning-tools": "^5.0.1",
@@ -49,7 +50,7 @@
     "@types/node": "^20.8.6",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "@typescript-eslint/parser": "^6.3.0",
-    "@webbtc/webln-types": "^3.0.0",
+    "@webbtc/webln-types": "./webbtc-webln-types-3.0.0.tgz",
     "browserify": "^17.0.0",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
